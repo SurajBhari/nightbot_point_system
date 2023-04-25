@@ -39,6 +39,7 @@ def ignore_exc(iterable):
 
 for channel_id in data.keys():
     vids = scrapetube.get_channel(channel_id, content_type="streams")
+    print(f"Processing for channel {channel_id}")
     vids = [vid for vid in vids if vid["videoId"] not in known_streams]
     for vid in vids:
         stream_id = vid['videoId']
