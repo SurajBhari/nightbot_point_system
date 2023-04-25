@@ -37,6 +37,10 @@ def ignore_exc(iterable):
             continue
         yield item
 
+# Create table if not exists
+
+cur.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)")
+conn.commit()
 for channel_id in data.keys():
     vids = scrapetube.get_channel(channel_id, content_type="streams")
     print(f"Processing for channel {channel_id}")
