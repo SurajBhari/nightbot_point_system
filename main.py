@@ -1,7 +1,5 @@
 import sqlite3
 
-from yt_stats_api import main as stats
-
 import os
 from flask import Flask, request
 from json import load
