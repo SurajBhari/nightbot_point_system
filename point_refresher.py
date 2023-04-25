@@ -52,11 +52,11 @@ for channel_id in data.keys():
         for message in ignore_exc(chat):
             user_id = message['author']['id']
             # add 10 points to user
-            cur.execute(f"SELECT * FROM points WHERE user_id = '{user_id}'")
+            cur.execute(f"SELECT * FROM points WHERE user_id = '{user_id}' and channel_id = '{channel_id}'")
             if cur.fetchone() is None:
-                cur.execute(f"INSERT INTO points (user_id, points) VALUES ('{user_id}', 10)")
+                cur.execute(f"INSERT INTO points (user_id, points, channel_id) VALUES ('{user_id}', 10, '{channel_id}')")
             else:
-                cur.execute(f"UPDATE points SET points = points + 10 WHERE user_id = '{user_id}'")
+                cur.execute(f"UPDATE points SET points = points + 10 WHERE user_id = '{user_id}' and channel_id = '{channel_id}'")
             conn.commit()
             #print(f"added 10 points to {user_id}")
         with open("known_streams.txt", "a") as f:
