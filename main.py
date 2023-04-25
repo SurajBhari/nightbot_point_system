@@ -127,7 +127,7 @@ def nightbot_parse(headers:dict):
 
 @app.get("/")
 def slash():
-    return "If you can read this. then you know that the system is working. Nothing you can do here."
+    return "Point System is working fine. You should not be here."
 
 @app.get("/callit")
 def callit():
