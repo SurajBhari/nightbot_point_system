@@ -175,7 +175,11 @@ def addpoints():
     if channel.id not in prefs:
         make_new_entry(channel.id)
         return "Channel not found. but an entry have been made. so you can try again now."
-    l = request.args.get("q").split(" ")
+    q = request.args.get("q")
+    if not q:
+        return "No query"
+    
+    l = q.split(" ")
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
 
@@ -202,7 +206,11 @@ def removepoints():
     if channel.id not in prefs:
         make_new_entry(channel.id)
         return "Channel not found. but an entry have been made. so you can try again now."
-    l = request.args.get("q").split(" ")
+    
+    q = request.args.get("q")
+    if not q:
+        return "No query given"
+    l = q.split(" ")
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
 
