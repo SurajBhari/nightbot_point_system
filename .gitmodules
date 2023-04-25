@@ -1,0 +1,3 @@
+[submodule "yt_stats_api"]
+	path = yt_stats_api
+	url = https://github.com/AG4lyf/yt_stats_api
