@@ -227,6 +227,8 @@ def gamble():
     chance = random.randint(1, 100)
     points = get_points(user.id)
     stake = request.args.get("q")
+    if not stake:
+        return "No stake given"
     try:
         stake = int(stake)
     except ValueError:
