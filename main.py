@@ -36,7 +36,7 @@ def update_user_file(json):
 def get_user_id(username):
 
     for key, value in get_user_file().items():
-        if value.lower() == username:
+        if value.lower() == username.lower():
             return key
     return None
 
@@ -152,7 +152,12 @@ def points():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
-
+    q = request.args.get("q")
+    if q:
+        user = User()
+        user.name = q
+        user.id = get_user_id(q)
+        
     points = get_points(user.id)
     print(points)
     prefs = get_preference_file()
@@ -170,7 +175,7 @@ def addpoints():
     except KeyError:
         return "Not able to auth"
 
-    points = get_points(user.id)
+    
     prefs = get_preference_file()
     if channel.id not in prefs:
         make_new_entry(channel.id)
@@ -184,6 +189,7 @@ def addpoints():
     qchannel = " ".join(l[:-1]).lower()
 
     cid = get_user_id(qchannel)
+    points = get_points(cid)
     if not cid:
         return "Channel have no account. can you ask them to use the bot once?"
     try:
@@ -192,7 +198,7 @@ def addpoints():
         return "Not a number"
     points.add_points(amount)
     points.update(cid)
-    return f"Added {amount} {prefs[channel.id]['pname']} to {user.name}"
+    return f"Added {amount} {prefs[channel.id]['pname']} to {qchannel}"
 
 @app.get("/removepoints")
 def removepoints():
@@ -201,7 +207,6 @@ def removepoints():
     except KeyError:
         return "Not able to auth"
 
-    points = get_points(user.id)
     prefs = get_preference_file()
     if channel.id not in prefs:
         make_new_entry(channel.id)
@@ -215,6 +220,7 @@ def removepoints():
     qchannel = " ".join(l[:-1]).lower()
 
     cid = get_user_id(qchannel)
+    points = get_points(cid)
     if not cid:
         return "Channel have no account. can you ask them to use the bot once?"
     try:
@@ -223,7 +229,7 @@ def removepoints():
         return "Not a number"
     points.remove_points(amount)
     points.update(cid)
-    return f"Removed {amount} {prefs[channel.id]['pname']} from {user.name}"
+    return f"Removed {amount} {prefs[channel.id]['pname']} from {qchannel}"
 
 @app.get("/gamble")
 def gamble():
