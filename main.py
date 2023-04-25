@@ -47,7 +47,7 @@ points_conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), "points.db
 points_cursor = points_conn.cursor()
 
 # make a table named points with user_id and points
-points_cursor.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER)")
+points_cursor.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)")
 points_conn.commit()
 
 def get_preference_file(channel_id:str):
@@ -94,13 +94,13 @@ class Points:
     def set_points(self, amount):
         self.points = amount
     
-    def update(self, user_id):
+    def update(self, user_id, channel_id):
         # update the database
-        points_cursor.execute("SELECT * FROM points WHERE user_id = ?", (user_id, ))
+        points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (user_id, channel_id))
         if not points_cursor.fetchone():
-            points_cursor.execute("INSERT INTO points VALUES (?, ?)", (user_id, self.points))
+            points_cursor.execute("INSERT INTO points VALUES (?, ?, ?)", (user_id, self.points, channel_id))
         else:
-            points_cursor.execute("UPDATE points SET points = ? WHERE user_id = ?", (self.points, user_id))
+            points_cursor.execute("UPDATE points SET points = ? WHERE user_id = ? and channel_id = ?", (self.points, user_id, channel_id))
         points_conn.commit()
 
     def __str__(self) -> str:
@@ -140,12 +140,12 @@ def callit():
     return f"Changed the name of the points to {new_name}"
 
 
-def get_points(cid:str) -> Points:
-    points_cursor.execute("SELECT * FROM points WHERE user_id = ?", (cid, ))
+def get_points(uid:str, cid:str) -> Points:
+    points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (uid, cid))
     points = points_cursor.fetchone()
     if not points:
         points = Points(50)
-        points.update(cid) # give free 50 points to start the journey with
+        points.update(uid, cid) # give free 50 points to start the journey with
     else:
         points = Points(int(points[1]))
     return points
@@ -162,7 +162,7 @@ def points():
         user.name = q
         user.id = get_user_id(q)
         
-    points = get_points(user.id)
+    points = get_points(user.id, channel.id)
     print(points)
     prefs = get_preference_file(channel.id)
     string = f"User: {user.name} have {points} {prefs[channel.id]['pname']}"
@@ -186,16 +186,16 @@ def addpoints():
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
 
-    cid = get_user_id(qchannel)
-    points = get_points(cid)
-    if not cid:
+    uid = get_user_id(qchannel)
+    points = get_points(uid, channel.id)
+    if not uid:
         return "Channel have no account. can you ask them to use the bot once?"
     try:
         amount = int(amount)
     except ValueError:
         return "Not a number"
     points.add_points(amount)
-    points.update(cid)
+    points.update(uid, channel.id)
     return f"Added {amount} {prefs[channel.id]['pname']} to {qchannel}"
 
 @app.get("/removepoints")
@@ -213,16 +213,16 @@ def removepoints():
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
 
-    cid = get_user_id(qchannel)
-    points = get_points(cid)
-    if not cid:
+    uid = get_user_id(qchannel)
+    points = get_points(uid, channel.id)
+    if not uid:
         return "Channel have no account. can you ask them to use the bot once?"
     try:
         amount = int(amount)
     except ValueError:
         return "Not a number"
     points.remove_points(amount)
-    points.update(cid)
+    points.update(uid, channel_id=channel.id)
     return f"Removed {amount} {prefs[channel.id]['pname']} from {qchannel}"
 
 @app.get("/gamble")
@@ -233,7 +233,7 @@ def gamble():
         return "Not able to auth"
     prefs = get_preference_file(channel.id)
     chance = random.randint(1, 100)
-    points = get_points(user.id)
+    points = get_points(user.id, channel.id)
     stake = request.args.get("q")
     if not stake:
         return "No stake given"
@@ -249,11 +249,11 @@ def gamble():
     # do the gamble
     if chance > 50:
         points.add_points(stake)
-        points.update(user.id)
+        points.update(user.id, channel.id)
         return f"{user.name} won {stake} {prefs[channel.id]['pname']}, and now have {points} {prefs[channel.id]['pname']}"
     else:
         points.remove_points(stake)
-        points.update(user.id)
+        points.update(user.id, channel.id)
         return f"{user.name} lost {stake} {prefs[channel.id]['pname']}, and now have {points} {prefs[channel.id]['pname']}"
 
 @app.get("/flip")
@@ -283,18 +283,18 @@ def flip():
     else:
         call = "tails"
     prefs = get_preference_file(channel.id)
-    points = get_points(user.id)
+    points = get_points(user.id, channel.id)
     if quantity > points.points:
         return f"{user.name} does not have enough {prefs[channel.id]['pname']} to gamble {quantity} {prefs[channel.id]['pname']}"
     cpu_call = random.choice(["heads", "tails"])
     if cpu_call == call:
         points.add_points(quantity)
-        points.update(user.id)
+        points.update(user.id, channel.id)
         
         return f"Flipped {cpu_call}, {user.name} won {quantity} {prefs[channel.id]['pname']}, You now have {points.points} {prefs[channel.id]['pname']}"   
     else:
         points.remove_points(quantity)
-        points.update(user.id)
+        points.update(user.id, channel.id)
 
         return f"Flipped {cpu_call}, {user.name} lost {quantity} {prefs[channel.id]['pname']}, You now have {points.points} {prefs[channel.id]['pname']}"
     
