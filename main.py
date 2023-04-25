@@ -50,13 +50,21 @@ points_cursor = points_conn.cursor()
 points_cursor.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER)")
 points_conn.commit()
 
-def get_preference_file():
+def get_preference_file(channel_id:str):
     try:
         with open(os.path.join(os.path.dirname(__file__), "preferences.json")) as f:
-            return load(f)
+            prefs = load(f)
+            if channel_id not in prefs:
+                prefs[channel_id] = {"pname": "points"}
+                update_pref(prefs)
+                return prefs
+            return prefs
     except FileNotFoundError:
         with open(os.path.join(os.path.dirname(__file__), "preferences.json"), "w") as f:
-            dump({}, f)
+            prefs = {}
+            prefs[channel_id] = {"pname": "points"}
+            update_pref(prefs)
+            return prefs
         return {}
     return {}
     
@@ -125,17 +133,12 @@ def slash():
 def callit():
     q = request.args.get("q")
     new_name = q
-    prefs = get_preference_file()
     channel, user = nightbot_parse(request.headers)
+    prefs = get_preference_file(channel.id)
     prefs[channel.id]["pname"] = new_name
     update_pref(prefs)
     return f"Changed the name of the points to {new_name}"
 
-def make_new_entry(cid:str):
-    prefs = get_preference_file()
-    prefs[cid] = {"pname": "points"}
-    update_pref(prefs)
-    return prefs[cid]
 
 def get_points(cid:str) -> Points:
     points_cursor.execute("SELECT * FROM points WHERE user_id = ?", (cid, ))
@@ -160,10 +163,7 @@ def points():
         
     points = get_points(user.id)
     print(points)
-    prefs = get_preference_file()
-    if channel.id not in prefs:
-        make_new_entry(channel.id)
-        return "Channel not found. but an entry have been made. so you can try again now."
+    prefs = get_preference_file(channel.id)
     string = f"User: {user.name} have {points} {prefs[channel.id]['pname']}"
     return string
 
@@ -176,10 +176,7 @@ def addpoints():
         return "Not able to auth"
 
     
-    prefs = get_preference_file()
-    if channel.id not in prefs:
-        make_new_entry(channel.id)
-        return "Channel not found. but an entry have been made. so you can try again now."
+    prefs = get_preference_file(channel.id)
     q = request.args.get("q")
     if not q:
         return "No query"
@@ -207,11 +204,7 @@ def removepoints():
     except KeyError:
         return "Not able to auth"
 
-    prefs = get_preference_file()
-    if channel.id not in prefs:
-        make_new_entry(channel.id)
-        return "Channel not found. but an entry have been made. so you can try again now."
-    
+    prefs = get_preference_file(channel.id)
     q = request.args.get("q")
     if not q:
         return "No query given"
@@ -237,7 +230,7 @@ def gamble():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
-    prefs = get_preference_file()
+    prefs = get_preference_file(channel.id)
     chance = random.randint(1, 100)
     points = get_points(user.id)
     stake = request.args.get("q")
@@ -247,6 +240,9 @@ def gamble():
         stake = int(stake)
     except ValueError:
         return "Not a number"
+    if stake < 1:
+        return "Stake must be greater than 0"
+    
     if stake > points.points:
         return f"{user.name} does not have enough {prefs[channel.id]['pname']} to gamble {stake} {prefs[channel.id]['pname']}"
     # do the gamble
@@ -275,6 +271,9 @@ def flip():
     except ValueError:
         return "Not a number"
     
+    if quantity < 1:
+        return "Quantity must be greater than 0"
+    
     call = call.lower()
     if call not in ["h", "head", "heads", "tails", "tail", "t"]:
         return "Not a valid call, please use h for heads or t for tails"
@@ -282,8 +281,10 @@ def flip():
         call = "heads"
     else:
         call = "tails"
-    prefs = get_preference_file()
+    prefs = get_preference_file(channel.id)
     points = get_points(user.id)
+    if quantity > points.points:
+        return f"{user.name} does not have enough {prefs[channel.id]['pname']} to gamble {quantity} {prefs[channel.id]['pname']}"
     cpu_call = random.choice(["heads", "tails"])
     if cpu_call == call:
         points.add_points(quantity)
