@@ -1,1 +1,1 @@
-"# nightbot_point_system" 
+# nightbot_point_system
