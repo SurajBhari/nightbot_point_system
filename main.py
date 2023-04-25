@@ -144,7 +144,8 @@ def get_points(cid:str) -> Points:
     points_cursor.execute("SELECT * FROM points WHERE user_id = ?", (cid, ))
     points = points_cursor.fetchone()
     if not points:
-        points = Points(0)
+        points = Points(50)
+        points.update(cid) # give free 50 points to start the journey with
     else:
         points = Points(int(points[1]))
     return points
