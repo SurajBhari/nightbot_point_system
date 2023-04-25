@@ -54,6 +54,7 @@ def points():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
+    return user.name
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002, debug=True)
