@@ -220,6 +220,7 @@ def top():
     for p in points:
         string += f"{counter}. {get_user_name(p[0])}: {p[1]} {prefs[channel.id]['pname']} | "
         counter += 1
+    return string
 
 def get_user_name(uid:str):
     relation = get_user_file()
