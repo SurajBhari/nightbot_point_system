@@ -14,6 +14,8 @@ import random
 
 app = Flask(__name__)
 
+global lock_list
+lock_list = []
 # path to database.db is ./yt_stats_api/database.db
 conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), "database.db"), check_same_thread=False)
 cursor = conn.cursor()
@@ -125,6 +127,18 @@ def nightbot_parse(headers:dict):
     return channel, user
 
 
+@app.get("/lock")
+def lock():
+    channel, user = nightbot_parse(request.headers)
+    lock_list.append(channel.id)
+    return "Locked the points"
+
+@app.get("/unlock")
+def unlock():
+    channel, user = nightbot_parse(request.headers)
+    lock_list.remove(channel.id)
+    return "Unlocked the points"
+
 @app.get("/")
 def slash():
     return "Point System is working fine. You should not be here."
@@ -156,8 +170,12 @@ def points():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
+    if channel.id in lock_list:
+        return "This channel is locked. Moderators have locked the gambling."
     q = request.args.get("q")
     if q:
+        if q.startswith("@"):
+            q = q[1:]
         user = User()
         user.name = q
         user.id = get_user_id(q)
@@ -185,6 +203,8 @@ def addpoints():
     l = q.split(" ")
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
+    if qchannel.startswith("@"):
+        qchannel = qchannel[1:]
 
     uid = get_user_id(qchannel)
     points = get_points(uid, channel.id)
@@ -212,6 +232,8 @@ def removepoints():
     l = q.split(" ")
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
+    if qchannel.startswith("@"):
+        qchannel = qchannel[1:]
 
     uid = get_user_id(qchannel)
     points = get_points(uid, channel.id)
@@ -231,6 +253,8 @@ def gamble():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
+    if channel.id in lock_list:
+        return "This channel is locked. Moderators have locked the gambling."
     prefs = get_preference_file(channel.id)
     chance = random.randint(1, 100)
     points = get_points(user.id, channel.id)
@@ -262,6 +286,8 @@ def flip():
         channel, user = nightbot_parse(request.headers)
     except KeyError:
         return "Not able to auth"
+    if channel.id in lock_list:
+        return "This channel is locked. Moderators have locked the gambling."
     call = request.args.get("q")
     try:
         quantity, call = call.split(" ")
