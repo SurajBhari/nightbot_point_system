@@ -189,7 +189,7 @@ def give():
 
 
 @app.get("/top")
-def top():
+async def top():
     try:
         channel, user = nightbot_parse(request.headers)
     except KeyError:
@@ -220,6 +220,14 @@ def top():
     for p in points:
         string += f"{counter}. {get_user_name(p[0])}: {p[1]} {prefs[channel.id]['pname']} | "
         counter += 1
+    if len(string) > 200:
+        #await asyncio.sleep(5) 
+        response_url = request.headers["Nightbot-Response-Url"]
+        parts = [string[i:i+200] for i in range(0, len(string), 200)]
+        for part in parts:
+            requests.post(response_url, data={"message": part})
+            await asyncio.sleep(5)
+        return " "
     return string
 
 def get_user_name(uid:str):
