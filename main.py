@@ -185,7 +185,7 @@ def give():
     taker_points.add_points(amount)
     giver_points.update(user.id, channel.id)
     taker_points.update(uid, channel.id)
-    return f"Gave {amount} {prefs[channel.id]['pname']} to {name}."
+    return f"{user.name} gave {amount} {prefs[channel.id]['pname']} to {name}."
 
 
 def get_points(uid:str, cid:str) -> Points:
