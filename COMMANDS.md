@@ -18,4 +18,4 @@ Commands are: </br>
 
 !addcom !give $(urlfetch http://surajbhari.info:5002/give?q=$(querystring)) </br>
 
-!addcom !toppoints $(urlfetch http://surajbhari.info:5002/toppoints?q=$(querystring)) </br>
+!addcom !toppoints $(urlfetch http://surajbhari.info:5002/top?q=$(querystring)) </br>

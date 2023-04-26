@@ -188,6 +188,44 @@ def give():
     return f"{user.name} gave {amount} {prefs[channel.id]['pname']} to {name}."
 
 
+@app.get("/top")
+def top():
+    try:
+        channel, user = nightbot_parse(request.headers)
+    except KeyError:
+        return "Not able to auth"
+    if channel.id in lock_list:
+        return "This channel is locked. Moderators have locked the gambling."
+    q = request.args.get("q")
+    if q:
+        if not q.isdigit():
+            return "Please Enter a number between 1 to 20"
+        q = int(q)
+        if q > 20:
+            return "Please enter a number below 20"
+        if q < 1:
+            return "Not a Valid number. Enter a number between 1 and 20"
+    else:
+        q = 10
+
+
+    # get top 10
+    points_cursor.execute("SELECT * FROM points WHERE channel_id = ? ORDER BY points DESC LIMIT ?", (channel.id, q))
+    points = points_cursor.fetchall()
+    if not points:
+        return "No data found"
+    prefs = get_preference_file(channel.id)
+    string = ""
+    counter = 1
+    for p in points:
+        string += f"{counter}. {get_user_name(p[0])}: {p[1]} {prefs[channel.id]['pname']} | "
+        counter += 1
+
+def get_user_name(uid:str):
+    relation = get_user_file()
+    return relation.get(uid, "Unknown")
+
+
 def get_points(uid:str, cid:str) -> Points:
     points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (uid, cid))
     points = points_cursor.fetchone()
