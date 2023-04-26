@@ -153,6 +153,40 @@ def callit():
     update_pref(prefs)
     return f"Changed the name of the points to {new_name}"
 
+@app.get("/give")
+def give():
+    channel, user = nightbot_parse(request.headers)
+    if channel.id in lock_list:
+        return "This channel is locked. Moderators have locked the gambling."
+    q = request.args.get("q")
+    if not q:
+        return "Please provide a user to give the points to."
+    # q should be name and ammount
+    l = q.split(" ")
+    prefs = get_preference_file(channel.id)
+    amount = l[-1]
+    try:
+        amount = int(amount)
+    except ValueError:
+        return "Please provide a valid amount."
+    if amount < 0:
+        return "Please provide a valid amount."
+    name = " ".join(l[:-1])
+    if name.startswith("@"):
+        name = name[1:]
+    uid = get_user_id(name)
+    if not uid:
+        return "Please provide a valid user."
+    giver_points = get_points(user.id, channel.id)
+    taker_points = get_points(uid, channel.id)
+    if giver_points.points < amount:
+        return "You don't have enough points to give."
+    giver_points.remove_points(amount)
+    taker_points.add_points(amount)
+    giver_points.update(user.id, channel.id)
+    taker_points.update(uid, channel.id)
+    return f"Gave {amount} {prefs[channel.id]['pname']} to {name}."
+
 
 def get_points(uid:str, cid:str) -> Points:
     points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (uid, cid))
