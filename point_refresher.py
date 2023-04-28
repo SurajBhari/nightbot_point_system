@@ -9,7 +9,7 @@ cur = conn.cursor()
 
 
 try:
-    data = load(open("preferences.json", "r")) 
+    data = load(open("preferences.json", "r"))
 except FileNotFoundError:
     data = {}
     with open("preferences.json", "w") as f:
@@ -26,6 +26,7 @@ except FileNotFoundError:
     with open("known_streams.txt", "w") as f:
         pass
 
+
 def ignore_exc(iterable):
     iterator = iter(iterable)
     while True:
@@ -37,16 +38,19 @@ def ignore_exc(iterable):
             continue
         yield item
 
+
 # Create table if not exists
 
-cur.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)")
+cur.execute(
+    "CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)"
+)
 conn.commit()
 for channel_id in data.keys():
     vids = scrapetube.get_channel(channel_id, content_type="streams")
     print(f"Processing for channel {channel_id}")
     vids = [vid for vid in vids if vid["videoId"] not in known_streams]
     for vid in vids:
-        stream_id = vid['videoId']
+        stream_id = vid["videoId"]
         print(f"processing {stream_id}")
         try:
             chat = ChatDownloader().get_chat(stream_id)
@@ -54,20 +58,20 @@ for channel_id in data.keys():
             continue
 
         for message in ignore_exc(chat):
-            user_id = message['author']['id']
+            user_id = message["author"]["id"]
             # add 10 points to user
-            cur.execute(f"SELECT * FROM points WHERE user_id = '{user_id}' and channel_id = '{channel_id}'")
+            cur.execute(
+                f"SELECT * FROM points WHERE user_id = '{user_id}' and channel_id = '{channel_id}'"
+            )
             if cur.fetchone() is None:
-                cur.execute(f"INSERT INTO points (user_id, points, channel_id) VALUES ('{user_id}', 10, '{channel_id}')")
+                cur.execute(
+                    f"INSERT INTO points (user_id, points, channel_id) VALUES ('{user_id}', 10, '{channel_id}')"
+                )
             else:
-                cur.execute(f"UPDATE points SET points = points + 10 WHERE user_id = '{user_id}' and channel_id = '{channel_id}'")
+                cur.execute(
+                    f"UPDATE points SET points = points + 10 WHERE user_id = '{user_id}' and channel_id = '{channel_id}'"
+                )
             conn.commit()
-            #print(f"added 10 points to {user_id}")
+            # print(f"added 10 points to {user_id}")
         with open("known_streams.txt", "a") as f:
             f.write(stream_id + "\n")
-
-
-
-
-
-
