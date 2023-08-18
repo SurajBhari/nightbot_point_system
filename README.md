@@ -1,6 +1,7 @@
 # nightbot_point_system
 
-![Point Refresher every hour](https://cronitor.io/badges/U0xpNT/production/RYx1nRG5ID8Jas20Nc8RnxgSF_c.svg)
+![Point Refresher every hour](https://cronitor.io/badges/U0xpNT/production/RYx1nRG5ID8Jas20Nc8RnxgSF_c.svg) </br>
+You can see [Operational Stats here.](https://ytps.cronitorstatus.com/)
 
 A good streamer friend of mine was too hesitant with have 2 bots in chat. out of which. one's sole purpose was to keep track of points. So I made this for him. so that he can use Nightbot for everything. and this for points.
 
