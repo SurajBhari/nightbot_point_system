@@ -1,4 +1,5 @@
 import sqlite3
+from bs4 import BeautifulSoup
 
 import os
 from flask import Flask, request
@@ -10,6 +11,8 @@ import requests
 import builtins
 import asyncio
 import time
+from requests import get
+
 import random
 
 app = Flask(__name__)
@@ -17,10 +20,6 @@ app = Flask(__name__)
 global lock_list
 lock_list = []
 # path to database.db is ./yt_stats_api/database.db
-conn = sqlite3.connect(
-    os.path.join(os.path.dirname(__file__), "database.db"), check_same_thread=False
-)
-cursor = conn.cursor()
 
 # make a json file that stores the user_id and username relation
 def get_user_file():
@@ -33,11 +32,9 @@ def get_user_file():
         return {}
     return {}
 
-
 def update_user_file(json):
     with open(os.path.join(os.path.dirname(__file__), "users.json"), "w") as f:
         dump(json, f)
-
 
 def get_user_id(username):
 
@@ -47,19 +44,16 @@ def get_user_id(username):
     return None
 
 
-points_conn = sqlite3.connect(
-    os.path.join(os.path.dirname(__file__), "points.db"), check_same_thread=False
-)
+
+
+points_conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), "points.db"), check_same_thread=False)
 points_cursor = points_conn.cursor()
 
 # make a table named points with user_id and points
-points_cursor.execute(
-    "CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)"
-)
+points_cursor.execute("CREATE TABLE IF NOT EXISTS points (user_id TEXT, points INTEGER, channel_id TEXT)")
 points_conn.commit()
 
-
-def get_preference_file(channel_id: str):
+def get_preference_file(channel_id:str):
     try:
         with open(os.path.join(os.path.dirname(__file__), "preferences.json")) as f:
             prefs = load(f)
@@ -69,70 +63,54 @@ def get_preference_file(channel_id: str):
                 return prefs
             return prefs
     except FileNotFoundError:
-        with open(
-            os.path.join(os.path.dirname(__file__), "preferences.json"), "w"
-        ) as f:
+        with open(os.path.join(os.path.dirname(__file__), "preferences.json"), "w") as f:
             prefs = {}
             prefs[channel_id] = {"pname": "points"}
             update_pref(prefs)
             return prefs
         return {}
     return {}
-
-
+    
 def update_pref(json):
     with open(os.path.join(os.path.dirname(__file__), "preferences.json"), "w") as f:
         dump(json, f)
-
 
 class User:
     name = None
     id = None
 
-
 class Channel:
     name = None
     id = None
 
-
 class Points:
     points = None
-
-    def __init__(self, points: int) -> None:
+    def __init__(self, points:int) -> None:
         self.points = points
 
     def add_points(self, amount):
         self.points += amount
-
+    
     def remove_points(self, amount):
         self.points -= amount
-
+    
     def set_points(self, amount):
         self.points = amount
-
+    
     def update(self, user_id, channel_id):
         # update the database
-        points_cursor.execute(
-            "SELECT * FROM points WHERE user_id = ? and channel_id = ?",
-            (user_id, channel_id),
-        )
+        points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (user_id, channel_id))
         if not points_cursor.fetchone():
-            points_cursor.execute(
-                "INSERT INTO points VALUES (?, ?, ?)",
-                (user_id, self.points, channel_id),
-            )
+            points_cursor.execute("INSERT INTO points VALUES (?, ?, ?)", (user_id, self.points, channel_id))
         else:
-            points_cursor.execute(
-                "UPDATE points SET points = ? WHERE user_id = ? and channel_id = ?",
-                (self.points, user_id, channel_id),
-            )
+            points_cursor.execute("UPDATE points SET points = ? WHERE user_id = ? and channel_id = ?", (self.points, user_id, channel_id))
         points_conn.commit()
 
     def __str__(self) -> str:
         return str(self.points)
 
 
-def nightbot_parse(headers: dict):
+def nightbot_parse(headers:dict):
     c = parse_qs(headers["Nightbot-Channel"])
     u = parse_qs(headers["Nightbot-User"])
     channel = Channel()
@@ -156,18 +134,15 @@ def lock():
     lock_list.append(channel.id)
     return "Locked the points"
 
-
 @app.get("/unlock")
 def unlock():
     channel, user = nightbot_parse(request.headers)
     lock_list.remove(channel.id)
     return "Unlocked the points"
 
-
 @app.get("/")
 def slash():
     return "Point System is working fine. You should not be here."
-
 
 @app.get("/callit")
 def callit():
@@ -178,7 +153,6 @@ def callit():
     prefs[channel.id]["pname"] = new_name
     update_pref(prefs)
     return f"Changed the name of the points to {new_name}"
-
 
 @app.get("/give")
 def give():
@@ -235,11 +209,9 @@ async def top():
     else:
         q = 10
 
+
     # get top 10
-    points_cursor.execute(
-        "SELECT * FROM points WHERE channel_id = ? ORDER BY points DESC LIMIT ?",
-        (channel.id, q),
-    )
+    points_cursor.execute("SELECT * FROM points WHERE channel_id = ? ORDER BY points DESC LIMIT ?", (channel.id, q))
     points = points_cursor.fetchall()
     if not points:
         return "No data found"
@@ -247,38 +219,40 @@ async def top():
     string = ""
     counter = 1
     for p in points:
-        string += (
-            f"{counter}. {get_user_name(p[0])}: {p[1]} {prefs[channel.id]['pname']} | "
-        )
+        string += f"{counter}. {get_user_name(p[0])}: {p[1]} {prefs[channel.id]['pname']} | "
         counter += 1
     if len(string) > 200:
-        # await asyncio.sleep(5)
+        #await asyncio.sleep(5) 
         response_url = request.headers["Nightbot-Response-Url"]
-        parts = [string[i : i + 200] for i in range(0, len(string), 200)]
+        parts = [string[i:i+200] for i in range(0, len(string), 200)]
         for part in parts:
             requests.post(response_url, data={"message": part})
             await asyncio.sleep(5)
         return " "
     return string
 
-
-def get_user_name(uid: str):
+def get_user_name(uid:str):
     relation = get_user_file()
-    return relation.get(uid, "Unknown")
+    name = ""
+    try:
+        name = relation[uid]
+    except KeyError:
+        channel_link = f"https://youtube.com/channel/{uid}"
+        html_data = get(channel_link).text
+        soup = BeautifulSoup(html_data, 'html.parser')
+        name = soup.find("meta", {"property": "og:title"})["content"]
+    return name 
 
 
-def get_points(uid: str, cid: str) -> Points:
-    points_cursor.execute(
-        "SELECT * FROM points WHERE user_id = ? and channel_id = ?", (uid, cid)
-    )
+def get_points(uid:str, cid:str) -> Points:
+    points_cursor.execute("SELECT * FROM points WHERE user_id = ? and channel_id = ?", (uid, cid))
     points = points_cursor.fetchone()
     if not points:
         points = Points(50)
-        points.update(uid, cid)  # give free 50 points to start the journey with
+        points.update(uid, cid) # give free 50 points to start the journey with
     else:
         points = Points(int(points[1]))
     return points
-
 
 @app.get("/points")
 def points():
@@ -295,7 +269,7 @@ def points():
         user = User()
         user.name = q
         user.id = get_user_id(q)
-
+        
     points = get_points(user.id, channel.id)
     print(points)
     prefs = get_preference_file(channel.id)
@@ -310,11 +284,12 @@ def addpoints():
     except KeyError:
         return "Not able to auth"
 
+    
     prefs = get_preference_file(channel.id)
     q = request.args.get("q")
     if not q:
         return "No query"
-
+    
     l = q.split(" ")
     amount = l[-1]
     qchannel = " ".join(l[:-1]).lower()
@@ -332,7 +307,6 @@ def addpoints():
     points.add_points(amount)
     points.update(uid, channel.id)
     return f"Added {amount} {prefs[channel.id]['pname']} to {qchannel}"
-
 
 @app.get("/removepoints")
 def removepoints():
@@ -363,7 +337,6 @@ def removepoints():
     points.update(uid, channel_id=channel.id)
     return f"Removed {amount} {prefs[channel.id]['pname']} from {qchannel}"
 
-
 @app.get("/gamble")
 def gamble():
     try:
@@ -384,7 +357,7 @@ def gamble():
         return "Not a number"
     if stake < 1:
         return "Stake must be greater than 0"
-
+    
     if stake > points.points:
         return f"{user.name} does not have enough {prefs[channel.id]['pname']} to gamble {stake} {prefs[channel.id]['pname']}"
     # do the gamble
@@ -396,7 +369,6 @@ def gamble():
         points.remove_points(stake)
         points.update(user.id, channel.id)
         return f"{user.name} lost {stake} {prefs[channel.id]['pname']}, and now have {points} {prefs[channel.id]['pname']}"
-
 
 @app.get("/flip")
 def flip():
@@ -415,10 +387,10 @@ def flip():
         quantity = int(quantity)
     except ValueError:
         return "Not a number"
-
+    
     if quantity < 1:
         return "Quantity must be greater than 0"
-
+    
     call = call.lower()
     if call not in ["h", "head", "heads", "tails", "tail", "t"]:
         return "Not a valid call, please use h for heads or t for tails"
@@ -434,14 +406,14 @@ def flip():
     if cpu_call == call:
         points.add_points(quantity)
         points.update(user.id, channel.id)
-
-        return f"Flipped {cpu_call}, {user.name} won {quantity} {prefs[channel.id]['pname']}, You now have {points.points} {prefs[channel.id]['pname']}"
+        
+        return f"Flipped {cpu_call}, {user.name} won {quantity} {prefs[channel.id]['pname']}, You now have {points.points} {prefs[channel.id]['pname']}"   
     else:
         points.remove_points(quantity)
         points.update(user.id, channel.id)
 
         return f"Flipped {cpu_call}, {user.name} lost {quantity} {prefs[channel.id]['pname']}, You now have {points.points} {prefs[channel.id]['pname']}"
-
+    
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002, debug=True)
