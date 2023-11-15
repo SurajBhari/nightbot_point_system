@@ -1,12 +1,12 @@
 # Nightbot Point System
 
-![Point Refresher every hour](https://cronitor.io/badges/U0xpNT/production/RYx1nRG5ID8Jas20Nc8RnxgSF_c.svg)
+![Refresh Points for youtube](https://cronitor.io/badges/3jpCEv/production/nS014drIqqviYWNfGPJR1TMJ4wU.svg)
 
 Explore the Nightbot Point System, a user-friendly solution for streamers who prefer consolidating their bots. This system focuses on points, allowing Nightbot to handle various tasks while the dedicated point system manages user scores.
 
 ## Operational Stats
 
-[Check Operational Stats here](https://ytps.cronitorstatus.com/)
+[Check Operational Stats here](https://suraj.cronitorstatus.com/)
 
 # Commands
 
