@@ -1,24 +1,35 @@
-# nightbot_point_system
+# Nightbot Point System
 
-![Point Refresher every hour](https://cronitor.io/badges/U0xpNT/production/RYx1nRG5ID8Jas20Nc8RnxgSF_c.svg) </br>
-You can see [Operational Stats here.](https://ytps.cronitorstatus.com/)
+![Point Refresher every hour](https://cronitor.io/badges/U0xpNT/production/RYx1nRG5ID8Jas20Nc8RnxgSF_c.svg)
 
-A good streamer friend of mine was too hesitant with have 2 bots in chat. out of which. one's sole purpose was to keep track of points. So I made this for him. so that he can use Nightbot for everything. and this for points.
+Explore the Nightbot Point System, a user-friendly solution for streamers who prefer consolidating their bots. This system focuses on points, allowing Nightbot to handle various tasks while the dedicated point system manages user scores.
+
+## Operational Stats
+
+[Check Operational Stats here](https://ytps.cronitorstatus.com/)
 
 # Commands
-Read [Here](COMMANDS.md) for all the commands that is needed to drive this system.
 
-# How to use
-1. Clone this repo
-2. the `main.py` is supposed to be run 24/7. you can run it with crontab on restart of your system. </br>
-`@reboot cd /path/to/this && nohup python3 main.py &`
-3. Setup `point_refresher.py` to run every once in a while. so that it can award points to people who chatted in the channel. each chat gives 10 points. you can modify it for your own use. </br>
-`0 * * * * cd /path/to/this && python3 point_refresher.py`
+Refer to the [COMMANDS.md](COMMANDS.md) file for a comprehensive list of commands essential for driving this system.
 
+## How to Use
 
-# Future
-- I will not be adding more complex things to this. as its quite good as it is right now. and I don't want to make it too complex.
+1. **Clone the Repo:** Begin by cloning this repository to your local machine.
+2. **Run `main.py` 24/7:** Use a tool like `crontab` to ensure `main.py` runs continuously, managing the core functionalities. For example:
+    ```
+    @reboot cd /path/to/this && nohup python3 main.py &
+    ```
+3. **Set up `point_refresher.py`:** Configure `point_refresher.py` to run periodically. This script awards points to users who chat in the channel, providing 10 points per chat. Customize it to fit your requirements. For example:
+    ```
+    0 * * * * cd /path/to/this && python3 point_refresher.py
+    ```
 
-- I will add a top commands for the sake of it.
+# Future Plans
 
-- I will add more ways to gamble the points. bankhiests and all. 
+- **Maintain Simplicity:** The current system is effective, and I aim to keep it user-friendly without introducing unnecessary complexity.
+
+- **Top Commands Feature:** Consider implementing a feature that highlights top commands used in the system.
+
+- **Gambling Options:** Explore additional ways for users to gamble points, such as bank heists and more.
+
+Feel free to enjoy the streamlined and efficient Nightbot Point System for your streaming needs!
